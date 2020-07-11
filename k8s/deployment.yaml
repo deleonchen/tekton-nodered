@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: nodered-tekton
+  name: nodered-tekton
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nodered-tekton
+  template:
+    metadata:
+      labels:
+        app: nodered-tekton
+    spec:
+      containers:
+        - image: quay.io/openshift-pipeline/nodered-tekton:latest
+          imagePullPolicy: Always
+          name: nodered-tekton
+          ports:
+            - containerPort: 1880
+              protocol: TCP
