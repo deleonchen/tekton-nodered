@@ -18,7 +18,6 @@
 // to make it available:
 //var fs = require("fs");
 
-// hello
 
 module.exports = {
     // the tcp port that the Node-RED web server is listening on
