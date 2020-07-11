@@ -1,0 +1,13 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: nodered-tekton
+  labels:
+    app: nodered-tekton
+spec:
+  port:
+    targetPort: 1880-tcp
+  to:
+    kind: Service
+    name: nodered-tekton
+    weight: 100
