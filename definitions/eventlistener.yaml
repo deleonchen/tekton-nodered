@@ -1,0 +1,12 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: EventListener
+metadata:
+  name: nodered-pipeline-listener
+spec:
+  serviceAccountName: pipeline
+  triggers:
+    - name: nodered-pipeline-trigger
+      bindings:
+        - name: nodered-pipeline-binding
+      template:
+        name: nodered-pipeline-template

@@ -1,0 +1,30 @@
+apiVersion: triggers.tekton.dev/v1alpha1
+kind: TriggerTemplate
+metadata:
+  name: nodered-pipeline-template
+spec:
+  params:
+    - name: gitrevision
+      description: The git revision
+      default: master
+    - name: gitrepositoryurl
+      description: The git repository url
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1alpha1
+      kind: PipelineRun
+      metadata:
+        name: nodered-pipeline-run-$(params.gitrevision)
+      spec:
+        serviceAccountName: pipeline
+        pipelineRef:
+          name: nodered-pipeline
+        resources:
+          - name: nodered-git
+            resourceRef:
+              name: nodered-git
+          - name: nodered-image-dev
+            resourceRef:
+              name: nodered-image-dev
+        params:
+          - name: DEPLOY_ENVIRONMENT
+            value: 'env-dev'
