@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: apply-manifests
+spec:
+  resources:
+    inputs:
+      - {type: git, name: docker-source}
+  params:
+    - name: MANIFEST_DIR
+      description: The directory in source that contains yaml manifests
+      type: string
+      default: "k8s"
+    - name: DEPLOY_PROJECT
+      description: The project where you deploy the app
+      default: 'env-dev'
+      type: string
+  steps:
+    - name: apply
+      image: quay.io/openshift/origin-cli:latest
+      workingDir: /workspace/docker-source
+      command: ["/bin/bash", "-c"]
+      args:
+        - |-
+          echo Applying manifests in $(inputs.params.MANIFEST_DIR) directory
+          oc apply -f $(inputs.params.MANIFEST_DIR) -n $(inputs.params.DEPLOY_PROJECT)
+          echo -----------------------------------

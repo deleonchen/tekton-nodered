@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Task
+metadata:
+  name: nodered-demo-build-with-buildah
+  namespace: env-ci
+spec:
+  inputs:
+    resources:
+      - name: docker-source
+        type: git
+    params:
+      - name: pathToDockerFile
+        default: /workspace/docker-source/Dockerfile
+      - name: pathToContext
+        default: /workspace/docker-source
+      - name: registryHost
+        default: "image-registry.openshift-image-registry.svc:5000"
+      - name: imageTag
+        default: nodered-demo
+  outputs:
+    resources:
+      - name: builtImage
+        type: image
+  steps:
+    - name: build
+      image: quay.io/buildah/stable
+      securityContext:
+        runAsUser: 0
+        privileged: true
+      command: ["sh"]
+      args:
+        - -c
+        - |
+          export HOME=/root
+          cd $(inputs.params.pathToContext)
+          set -e
+          SHORT_GIT_HASH=$(cat .git/refs/heads/master | awk '{print substr($1,0,7)}')
+          echo "SHORT_GIT_HASH = $SHORT_GIT_HASH"
+          echo Building Image $(outputs.resources.builtImage.url):$SHORT_GIT_HASH
+          echo Copying git source to /workspace/output/
+          cp -R $(inputs.params.pathToContext) /workspace/output/
+          echo -----------------------------------
+          buildah --storage-driver=vfs build-using-dockerfile -f $(inputs.params.pathToDockerFile) -t $(outputs.resources.builtImage.url):$SHORT_GIT_HASH .
+          echo Pushing Image $(outputs.resources.builtImage.url):$SHORT_GIT_HASH
+          buildah --storage-driver=vfs push --tls-verify=false --creds=anyone:$(cat /var/run/secrets/kubernetes.io/serviceaccount/token) $(outputs.resources.builtImage.url):$SHORT_GIT_HASH docker://$(outputs.resources.builtImage.url):$SHORT_GIT_HASH          

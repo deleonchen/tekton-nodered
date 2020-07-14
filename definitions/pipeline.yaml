@@ -1,0 +1,71 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  name: nodered-pipeline
+spec:
+  resources:
+    - name: nodered-git
+      type: git
+    - name: nodered-image-dev
+      type: image
+  params:
+    - name: APP_NAME
+      description: The name of the application
+      default: 'nodered-tekton'      
+    - name: APP_VERSION
+      description: The version of the application
+      default: '1.0'      
+    - name: AUTHORS_API_KEY
+      description: The OCP secret that contains DB credentials
+      default: 'authors-secret-api'
+    - name: DEPLOY_PROJECT
+      description: The project where you deploy the app
+      default: 'env-dev'
+    - name: DEPLOYMENT_NAME
+      description: name of the deployment to be patched
+      default: 'nodered-tekton'
+  tasks:
+  - name: build
+    taskRef:
+      name: nodered-demo-build-with-buildah
+    resources:       
+      inputs:
+        - name: docker-source
+          resource: nodered-git
+      outputs:
+        - name: builtImage
+          resource: nodered-image-dev
+  - name: apply-manifests
+    taskRef:
+      name: apply-manifests
+    resources:
+      inputs:
+      - name: docker-source
+        resource: nodered-git
+    params:
+    - name: DEPLOY_PROJECT
+      value: $(params.DEPLOY_PROJECT)
+    runAfter:
+    - build
+  - name: update-deployment
+    taskRef:
+      name: update-deployment
+    resources:
+      inputs:
+      - name: docker-source
+        resource: nodered-git
+      - name: image
+        resource: nodered-image-dev
+    params:
+    - name: APP_NAME
+      value: $(params.APP_NAME)
+    - name: APP_VERSION
+      value: $(params.APP_VERSION)
+    - name: AUTHORS_API_KEY
+      value: $(params.AUTHORS_API_KEY)
+    - name: DEPLOYMENT_NAME
+      value: $(params.DEPLOYMENT_NAME)
+    - name: DEPLOY_PROJECT
+      value: $(params.DEPLOY_PROJECT)
+    runAfter:
+    - apply-manifests

@@ -1,0 +1,45 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: update-deployment
+spec:
+  resources:
+    inputs:
+      - name: docker-source
+        type: git
+      - name: image
+        type: image
+  params:
+    - name: APP_NAME
+      description: The name of the application
+      default: 'nodered-tekton'
+      type: string
+    - name: APP_VERSION
+      description: The version of the application
+      default: '1.0'
+      type: string
+    - name: AUTHORS_API_KEY
+      description: The version of the application
+      default: 'authors-secret-api'
+      type: string
+    - name: DEPLOYMENT_NAME
+      description: The name of the deployment patch the image
+      type: string
+    - name: DEPLOY_PROJECT
+      description: The project where you deploy the app
+      default: 'env-dev'
+      type: string
+  steps:
+    - name: patch
+      image: quay.io/openshift/origin-cli:latest
+      workingDir: /workspace/docker-source
+      command: ["/bin/bash"]
+      args:
+        - -c
+        - |
+          set -e
+          SHORT_GIT_HASH=$(cat .git/refs/heads/master | awk '{print substr($1,0,7)}')
+          echo "SHORT_GIT_HASH = $SHORT_GIT_HASH"
+          echo "Patching deployment [$(inputs.params.DEPLOYMENT_NAME)] image to [$(inputs.resources.image.url):$SHORT_GIT_HASH]"
+          echo -----------------------------------
+          oc -n $(inputs.params.DEPLOY_PROJECT) patch deployment $(inputs.params.DEPLOYMENT_NAME) --patch='{"spec":{"template":{"spec":{ "containers":[{ "name": "$(inputs.params.DEPLOYMENT_NAME)", "image":"$(inputs.resources.image.url):'$SHORT_GIT_HASH'" }] }}}}'
