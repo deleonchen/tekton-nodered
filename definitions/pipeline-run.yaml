@@ -1,0 +1,20 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  name: nodered-pipeline-run
+spec:
+  serviceAccountName: pipeline
+  pipelineRef:
+    name: nodered-pipeline
+  resources:
+    - name: nodered-git
+      resourceRef:
+        name: nodered-git
+    - name: nodered-image-dev
+      resourceRef:
+        name: nodered-image-dev
+  params:
+    - name: DEPLOY_ENVIRONMENT
+      value: 'env-dev'
+    - name: DEPLOYMENT_NAME
+      value: nodered-tekton
